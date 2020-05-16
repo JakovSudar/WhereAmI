@@ -46,9 +46,7 @@ import java.util.*
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private val CHANNEL_ID = "imageNotification"
-    private lateinit var mSoundPool: SoundPool
-    var mSoundMap: HashMap<Int, Int> = HashMap()
-    private var mLoaded: Boolean = false
+    private lateinit var soundManager: SoundManager
     private lateinit var map: GoogleMap
     private lateinit var geocoder: Geocoder
     private val locationPermission = Manifest.permission.ACCESS_FINE_LOCATION
@@ -66,8 +64,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) createNotificationChannel()
+        soundManager = SoundManager(this)
         setUpMaps()
-        loadSounds()
+        soundManager.loadSounds()
         setUpUi()
     }
 
@@ -88,19 +87,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         else requestPermission()
     }
     //sounds
-    private fun loadSounds() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            this.mSoundPool = SoundPool.Builder().setMaxStreams(10).build()
-        } else {
-            this.mSoundPool = SoundPool(10, AudioManager.STREAM_MUSIC, 0)
-        }
-        this.mSoundPool.setOnLoadCompleteListener { _, _, _ -> mLoaded = true }
-        this.mSoundMap[R.raw.tap_sound] = this.mSoundPool.load(this, R.raw.tap_sound, 1)
-    }
-    private fun playSound(soundToPlay: Int) {
-        val soundID = this.mSoundMap[soundToPlay] ?: 0
-        this.mSoundPool.play(soundID, 1f, 1f, 1, 0, 1f)
-    }
+
     //maps
     private fun trackLocation() {
         if(hasPermissionCompat(locationPermission)){
@@ -158,15 +145,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         map.mapType = GoogleMap.MAP_TYPE_SATELLITE
         map.uiSettings.isZoomControlsEnabled = true
 
-
         map.setOnMapClickListener {
-            playSound(R.raw.tap_sound)
+            soundManager.playSound(R.raw.tap_sound)
             map.addMarker(MarkerOptions().position(it)
                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.marker)))
         }
     }
-
-
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
